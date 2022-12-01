@@ -1,0 +1,9 @@
+---
+title: "p8105_hw6_lg3239"
+author: "Landi Guo"
+date: "2022-12-01"
+output: github_document
+---
+
+
+
