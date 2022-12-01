@@ -5,5 +5,58 @@ date: "2022-12-01"
 output: github_document
 ---
 
+```{r, include = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(stringr)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## Problem 2
+```{r}
+wp = read_csv("data/homicide-data.csv")
+
+wp =
+  wp %>%
+  mutate(city_state = str_c(city, ", ", state)) %>%
+  # 0: unresolved, 1: resolved
+  mutate(disp_status = ifelse(disposition %in% c("Closed without arrest", "Open/No arrest"), 0, 1)) %>%
+  filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) %>%
+  mutate(victim_age = as.numeric(victim_age)) %>%
+  filter(victim_race %in% c("White", "Black"))
+```
+
+```{r}
+baltimore_df =
+  wp %>%
+  filter(city_state == "Baltimore, MD")
+
+baltimore_glm =
+  baltimore_df %>%
+  glm(disp_status ~ victim_age + victim_race + victim_sex, data = ., family = binomial())
+
+baltimore_glm %>%
+  broom::tidy() %>% 
+  mutate(confint_low = exp(estimate - std.error*1.96)) %>%
+  mutate(confint_high = exp(estimate + std.error*1.96)) %>%
+  mutate(OR = exp(estimate)) %>%
+  select(term, log_OR = estimate, OR, confint_low, confint_high)
+```
+
 
 
