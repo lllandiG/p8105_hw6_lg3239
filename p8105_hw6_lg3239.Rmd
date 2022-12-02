@@ -29,10 +29,10 @@ scale_fill_discrete = scale_fill_viridis_d
 
 ## Problem 2
 ```{r}
-wp = read_csv("data/homicide-data.csv")
+wpost = read_csv("data/homicide-data.csv")
 
-wp =
-  wp %>%
+wpost =
+  wpost %>%
   mutate(city_state = str_c(city, ", ", state)) %>%
   # 0: unresolved, 1: resolved
   mutate(disp_status = ifelse(disposition %in% c("Closed without arrest", "Open/No arrest"), 0, 1)) %>%
@@ -41,9 +41,10 @@ wp =
   filter(victim_race %in% c("White", "Black"))
 ```
 
+The result here shows that in Baltimore, MD, homicides in which the victim is male is about 57.4% less likely to be resolved than those in which the victim is female.
 ```{r}
 baltimore_df =
-  wp %>%
+  wpost %>%
   filter(city_state == "Baltimore, MD")
 
 baltimore_glm =
@@ -55,8 +56,38 @@ baltimore_glm %>%
   mutate(confint_low = exp(estimate - std.error*1.96)) %>%
   mutate(confint_high = exp(estimate + std.error*1.96)) %>%
   mutate(OR = exp(estimate)) %>%
-  select(term, log_OR = estimate, OR, confint_low, confint_high)
+  select(term, log_OR = estimate, OR, confint_low, confint_high) %>%
+  filter(term == "victim_sexMale")
+```
+The following runs `glm` on each city with resolved vs unresolved as the outcome and victim age, sex and race as predictors. `nest` everything except city and then use `map` to apply `glm` on each city's data. Then `broom::tidy` and `unnest` the model result, and manually calculate the CIs and adjusted OR using `exp`. Retain rows for term is `victim_sexMale`.
+```{r}
+city_results =
+  wpost %>%
+  nest(data = -city_state) %>%
+  mutate(model = map(data, ~glm(disp_status ~ victim_age + victim_race + victim_sex, data = .x, family = binomial()))) %>%
+  mutate(model = map(model, broom::tidy)) %>%
+  unnest(model) %>%
+  filter(term == "victim_sexMale") %>%
+  mutate(confint_low = exp(estimate - std.error*1.96),
+         confint_high = exp(estimate + std.error*1.96),
+         OR = exp(estimate)) %>%
+  select(city_state, term, log_OR = estimate, OR, confint_low, confint_high)
+
 ```
 
+This plot shows the estimated odds ratio and confidence intervals for solving homicides comparing male victims to female victims in each city. Homicides in which the victim is male are less likely to be resolved than those in which the victim is female in most of the cities. In Fresno, CA, Stockton, CA, and Albuquerque, NM, homicides in which the victim is male are more likely to be resolved than those in which the victim is female.
+```{r}
+city_results %>%
+  mutate(city_state = fct_reorder(city_state, OR)) %>%
+  ggplot(aes(x = city_state, y = OR)) +
+  geom_point(size = 0.5) +
+  geom_errorbar(aes(ymin = confint_low, ymax = confint_high), width = 0.5) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(
+    x = "City, State",
+    y = "Estimated OR",
+    title = "Estimated OR of resolved homicides for each city based on sex"
+  )
+```
 
 
