@@ -8,6 +8,7 @@ output: github_document
 ```{r, include = FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(stringr)
+library(modelr)
 knitr::opts_chunk$set(
 	echo = TRUE,
 	warning = FALSE,
@@ -126,5 +127,29 @@ lm_1 %>% broom::tidy()
 ```{r}
 lm_2 = lm(bwt ~ (bhead + blength + babysex)^3, data = weight_df)
 lm_2 %>% broom::tidy()
+```
+
+```{r}
+cv_df =
+  crossv_mc(weight_df, 100) %>%
+  mutate(train = map(train, as_tibble),
+         test = map(test, as_tibble)) %>%
+  mutate(lm_mom = map(train, ~lm(bwt ~ wtgain + momage + mheight, data = .x)),
+         lm_1 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+         lm_2 = map(train, ~lm(bwt ~ (bhead + blength + babysex)^3, data = .x))) %>%
+  mutate(rmse_mom = map2_dbl(lm_mom, test, ~rmse(model = .x, data = .y)),
+         rmse_length_gaweek = map2_dbl(lm_1, test, ~rmse(model = .x, data = .y)),
+         rmse_circum_len_sex = map2_dbl(lm_2, test, ~rmse(model = .x, data = .y)))
+
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) +
+  geom_violin()
 ```
 
