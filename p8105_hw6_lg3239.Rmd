@@ -90,4 +90,30 @@ city_results %>%
   )
 ```
 
+## Problem 3
+```{r}
+weight_df = read_csv("data/birthweight.csv")
+
+sum(is.na(bweight))
+```
+
+For the outcome of baby's birth weight, I choose to use `wtgain` mother's weight gain during pregnancy, `momage` mother's age at delivery, and `mheight` mother's height as predictors. I hypothesize that mother's weight gain during pregnancy is related to baby's birth weight because it is also giving the baby food/nutrients; mother's age at delivery might affect the health of the baby; mother's height and baby's height might be related and for taller baby, heavier baby.
+```{r}
+lm_mom = lm(bwt ~ wtgain + momage + mheight, data = weight_df)
+
+lm_mom %>% broom::tidy()
+```
+```{r}
+res = 
+  modelr::add_residuals(weight_df, lm_mom) %>%
+  select(resid)
+
+fitted = 
+  modelr::add_predictions(weight_df, lm_mom) %>%
+  select(pred)
+
+bind_cols(res, fitted) %>%
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point(alpha = 0.5)
+```
 
