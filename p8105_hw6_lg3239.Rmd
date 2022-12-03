@@ -92,6 +92,7 @@ city_results %>%
 ```
 
 ## Problem 3
+For cleaning, only convert the sex variable from numeric to character; there is no missing values.
 ```{r}
 weight_df = read_csv("data/birthweight.csv")
 
@@ -101,12 +102,14 @@ weight_df =
 ```
 
 For the outcome of baby's birth weight, I choose to use `wtgain` mother's weight gain during pregnancy, `momage` mother's age at delivery, and `mheight` mother's height as predictors. I hypothesize that mother's weight gain during pregnancy is related to baby's birth weight because it is also giving the baby food/nutrients; mother's age at delivery might affect the health of the baby; mother's height and baby's height might be related and for taller baby, heavier baby.
+This is the linear model for above predictors.
 ```{r}
 lm_mom = lm(bwt ~ wtgain + momage + mheight, data = weight_df)
-
 lm_mom %>% broom::tidy()
 ```
 
+This is the residual vs. fitted value plot for my chosen predictors.
+Use `add_residuals` and `add_predictions` for residuals and fitted points.
 ```{r}
 res = 
   modelr::add_residuals(weight_df, lm_mom) %>%
@@ -120,15 +123,18 @@ bind_cols(res, fitted) %>%
   ggplot(aes(x = pred, y = resid)) +
   geom_point(alpha = 0.5)
 ```
+This is the model using length at birth and gestational age as predictors.
 ```{r}
 lm_1 = lm(bwt ~ blength + gaweeks, data = weight_df)
 lm_1 %>% broom::tidy()
 ```
+This is the model using head circumference, length, sex, and all interactions (including the three-way interaction) between these.
 ```{r}
 lm_2 = lm(bwt ~ (bhead + blength + babysex)^3, data = weight_df)
 lm_2 %>% broom::tidy()
 ```
 
+This is the cross validation comparison for the three models. The result shows that my chosen predictors model has highest rmse and the model using head circumference, length, sex, and all interactions has the least rmse and the best fit.
 ```{r}
 cv_df =
   crossv_mc(weight_df, 100) %>%
