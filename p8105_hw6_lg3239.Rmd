@@ -29,6 +29,7 @@ scale_fill_discrete = scale_fill_viridis_d
 ```
 
 ## Problem 2
+Load the dataset and created `city_state` and `disp_status` variables, in which 0 is unresolved; 1 is resolved. `filter` based on the criteria.
 ```{r}
 wpost = read_csv("data/homicide-data.csv")
 
@@ -42,7 +43,7 @@ wpost =
   filter(victim_race %in% c("White", "Black"))
 ```
 
-The result here shows that in Baltimore, MD, homicides in which the victim is male is about 57.4% less likely to be resolved than those in which the victim is female.
+The result here shows that in Baltimore, MD, homicides in which the victim is male is about 57.4% less likely to be resolved than those in which the victim is female. The confidence interval is (0.325, 0.558)
 ```{r}
 baltimore_df =
   wpost %>%
@@ -74,6 +75,7 @@ city_results =
          OR = exp(estimate)) %>%
   select(city_state, term, log_OR = estimate, OR, confint_low, confint_high)
 
+head(city_results)
 ```
 
 This plot shows the estimated odds ratio and confidence intervals for solving homicides comparing male victims to female victims in each city. Homicides in which the victim is male are less likely to be resolved than those in which the victim is female in most of the cities. In Fresno, CA, Stockton, CA, and Albuquerque, NM, homicides in which the victim is male are more likely to be resolved than those in which the victim is female.
@@ -92,7 +94,7 @@ city_results %>%
 ```
 
 ## Problem 3
-For cleaning, only convert the sex variable from numeric to character; there is no missing values.
+For cleaning, only convert the sex variable from numeric to character; there is no missing value.
 ```{r}
 weight_df = read_csv("data/birthweight.csv")
 
@@ -123,6 +125,7 @@ bind_cols(res, fitted) %>%
   ggplot(aes(x = pred, y = resid)) +
   geom_point(alpha = 0.5)
 ```
+
 This is the model using length at birth and gestational age as predictors.
 ```{r}
 lm_1 = lm(bwt ~ blength + gaweeks, data = weight_df)
